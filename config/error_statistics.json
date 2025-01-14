@@ -1,0 +1,26 @@
+{
+    "Bajaj": {
+        "Dominar": {
+            "Headlight": {
+               "mean_error": 0.3247,
+                "std_error": 0.0118
+            },
+            "Exhaust": {
+                "mean_error": 0.2801,
+                "std_error": 0.0105
+            }
+        }
+    },
+    "tvs": {
+        "raider": {
+            "Headlight": {
+                "mean_error": 0.3519,
+                "std_error": 0.0640
+            },
+            "Exhaust": {
+                "mean_error": 0.2160,
+                "std_error": 0.0562
+            }
+        }
+    }
+}
