@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 from app.manual_cropping import ManualCropper
 from app.main import main
-from modules.exhaust_testing import test_exhaust_sound
+#from modules.exhaust_testing import test_exhaust_sound
+import subprocess
+import os
 
 class VehicleModificationApp:
     def __init__(self, root):
@@ -93,15 +95,28 @@ class VehicleModificationApp:
             self.result_text.insert(tk.END, f"Error during detection: {str(e)}\n")
 
     def test_exhaust(self):
-        # Prompt for file or microphone input
+        """Run the exhaust testing process."""
         self.result_text.insert(tk.END, "Testing Exhaust...\n")
-        file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav *.mp3 *.aac")])
-        if file_path:
-            result = test_exhaust_sound(file_path)
-            self.result_text.insert(tk.END, f"Exhaust Test Result: {result}\n")
-        else:
-            self.result_text.insert(tk.END, "No audio file selected.\n")
 
+        # Locate the path to the exhaust_testing.py script
+        script_path = os.path.abspath("exhaust_testing.py")  # Adjust this to your script's actual location
+
+        if not os.path.exists(script_path):
+            self.result_text.insert(tk.END, f"Error: {script_path} not found.\n")
+            return
+
+        try:
+            # Run the exhaust_testing.py script in a subprocess
+            process = subprocess.Popen(["python", script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+
+            # Capture and display the output
+            if stdout:
+                self.result_text.insert(tk.END, stdout.decode('utf-8'))
+            if stderr:
+                self.result_text.insert(tk.END, f"Error: {stderr.decode('utf-8')}\n")
+        except Exception as e:
+            self.result_text.insert(tk.END, f"Error running exhaust testing: {str(e)}\n")
 
 if __name__ == "__main__":
     root = tk.Tk()
