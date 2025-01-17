@@ -96,7 +96,7 @@ class VehicleModificationApp:
 
     def test_exhaust(self):
         """Run the exhaust testing process."""
-        self.result_text.insert(tk.END, "Testing Exhaust...\n")
+        #self.result_text.insert(tk.END, "Testing Exhaust...\n")
 
         # Locate the path to the exhaust_testing.py script
         script_path = os.path.abspath("exhaust_testing.py")  # Adjust this to your script's actual location
@@ -111,8 +111,7 @@ class VehicleModificationApp:
             stdout, stderr = process.communicate()
 
             # Capture and display the output
-            if stdout:
-                self.result_text.insert(tk.END, stdout.decode('utf-8'))
+
             if stderr:
                 self.result_text.insert(tk.END, f"Error: {stderr.decode('utf-8')}\n")
         except Exception as e:

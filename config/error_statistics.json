@@ -2,8 +2,8 @@
     "Bajaj": {
         "Dominar": {
             "Headlight": {
-               "mean_error": 0.3247,
-                "std_error": 0.0118
+               "mean_error": 0.2752,
+                "std_error": 0.0943
             },
             "Exhaust": {
                 "mean_error": 0.2801,

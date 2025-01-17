@@ -67,7 +67,7 @@ def main(image_path, brand, model, part):
         return {"status": f"Error statistics not found for {brand} {model} {part}"}
 
 
-    alpha = 2.0        # Multiplier for standard deviation
+    alpha = 2        # Multiplier for standard deviation
     threshold = mean_error + (alpha * std_error)
     print(f"Dynamic Threshold: {threshold}")
 

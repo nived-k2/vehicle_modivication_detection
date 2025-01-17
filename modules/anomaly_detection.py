@@ -1,5 +1,5 @@
 import torch
-from models.autoencoder import Autoencoder
+from models.autoencoder import DeepAutoencoder
 import torch.nn as nn
 
 class AnomalyDetector:
@@ -8,7 +8,7 @@ class AnomalyDetector:
         Initialize the anomaly detector with a trained autoencoder model.
         """
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = Autoencoder()
+        self.model = DeepAutoencoder()
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.to(self.device)
         self.model.eval()
