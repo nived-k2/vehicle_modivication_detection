@@ -75,8 +75,8 @@ def train_autoencoder(train_dir, model_save_path, epochs=20, batch_size=32, lear
 
 if __name__ == "__main__":
     train_autoencoder(
-        train_dir="C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/data/autoencoder/bajaj/dominar/headlight/train",
-        model_save_path="C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/models/bajaj_dominar_headlight_autoencoder.pth",
+        train_dir="C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/data/autoencoder/bajaj/dominar/exhaust/train",
+        model_save_path="C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/models/bajaj_dominar_exhaust_autoencoder.pth",
         epochs=100,
         batch_size=32,
         learning_rate=0.01

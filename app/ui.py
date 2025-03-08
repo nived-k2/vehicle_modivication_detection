@@ -1,15 +1,17 @@
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 from app.manual_cropping import ManualCropper
 from app.main import main
-#from modules.exhaust_testing import test_exhaust_sound
 import subprocess
 import os
+
 
 class VehicleModificationApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Vehicle Modification Detection")
+        self.modification_count = 0  # To track the number of modifications detected
+        self.penalty_rate = 5000  # Penalty rate per modification
 
         # Image Upload
         tk.Label(root, text="Upload Image:").grid(row=0, column=0, padx=10, pady=10)
@@ -46,7 +48,7 @@ class VehicleModificationApp:
         tk.Button(root, text="Test Exhaust", command=self.test_exhaust).grid(row=6, column=0, padx=10, pady=10)
 
         # Results Display
-        self.result_text = tk.Text(root, height=10, width=50)
+        self.result_text = tk.Text(root, height=15, width=60)
         self.result_text.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
 
     def update_model_dropdown(self, event):
@@ -88,18 +90,24 @@ class VehicleModificationApp:
         self.result_text.insert(tk.END, f"Starting detection for {brand} {model} - {part}...\n")
         try:
             results = main(self.image_path, brand, model, part)
-            self.result_text.insert(tk.END, "--- Results ---\n")
             for key, value in results.items():
                 self.result_text.insert(tk.END, f"{key}: {value}\n")
+                if value == "Modified":
+                    self.modification_count += 1
+
+            # Ask if the user wants to continue
+            continue_checking = messagebox.askyesno(
+                "Continue Checking?",
+                "Do you want to continue checking other parts?"
+            )
+            if not continue_checking:
+                self.show_final_penalty()
         except Exception as e:
             self.result_text.insert(tk.END, f"Error during detection: {str(e)}\n")
 
     def test_exhaust(self):
         """Run the exhaust testing process."""
-        #self.result_text.insert(tk.END, "Testing Exhaust...\n")
-
-        # Locate the path to the exhaust_testing.py script
-        script_path = os.path.abspath("exhaust_testing.py")  # Adjust this to your script's actual location
+        script_path = os.path.abspath("exhaust_testing.py")  # Adjust to the correct script location
 
         if not os.path.exists(script_path):
             self.result_text.insert(tk.END, f"Error: {script_path} not found.\n")
@@ -111,11 +119,20 @@ class VehicleModificationApp:
             stdout, stderr = process.communicate()
 
             # Capture and display the output
-
+            if stdout:
+                self.result_text.insert(tk.END, f"Output: {stdout.decode('utf-8')}\n")
             if stderr:
                 self.result_text.insert(tk.END, f"Error: {stderr.decode('utf-8')}\n")
         except Exception as e:
             self.result_text.insert(tk.END, f"Error running exhaust testing: {str(e)}\n")
+
+    def show_final_penalty(self):
+        # Display modifications and penalty
+        penalty = self.modification_count * self.penalty_rate
+        self.result_text.insert(tk.END, "\n--- Final Status ---\n")
+        self.result_text.insert(tk.END, f"Modifications Detected: {self.modification_count}\n")
+        self.result_text.insert(tk.END, f"Total Penalty: ₹{penalty}\n")
+
 
 if __name__ == "__main__":
     root = tk.Tk()

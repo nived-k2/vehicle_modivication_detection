@@ -7,7 +7,11 @@ class ManualCropper:
         self.image_path = image_path
         self.cropping = False
         self.ref_point = []
-        self.clone = None  # Store the cloned image here
+        self.clone = None
+        self.current_rect = None
+        self.resizing = False
+        self.resize_point = None
+        self.resize_threshold = 10  # Pixel range to detect resize handle
 
     def crop(self):
         image = cv2.imread(self.image_path)
@@ -24,11 +28,20 @@ class ManualCropper:
         cv2.setMouseCallback("Image", self.click_and_crop)
 
         while True:
-            cv2.imshow("Image", image)
+            temp_image = self.clone.copy()
+
+            # Draw the selected cropping rectangle
+            if len(self.ref_point) == 2:
+                cv2.rectangle(temp_image, self.ref_point[0], self.ref_point[1], (0, 255, 0), 2)
+                self.draw_resize_handles(temp_image)
+
+            cv2.imshow("Image", temp_image)
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord("r"):  # Reset the cropping region
-                image = self.clone.copy()
+                self.ref_point = []
+                self.current_rect = None
+                self.clone = image.copy()
             elif key == ord("c"):  # Confirm the crop
                 if len(self.ref_point) == 2:
                     x1, y1 = self.ref_point[0]
@@ -36,7 +49,7 @@ class ManualCropper:
                     crop_img = self.clone[y1:y2, x1:x2]
 
                     # Save cropped image to the desired path
-                    output_path = "C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/data/autoencoder/crop/test/cropped_image.jpg"
+                    output_path = "C:/Users/HP/OneDrive/Desktop/vehicle_modification_detection - Copy/data/autoencoder/crop/test/cropped_image.jpg"
                     os.makedirs(os.path.dirname(output_path), exist_ok=True)  # Ensure the directory exists
                     cv2.imwrite(output_path, crop_img)
                     print(f"Cropped image saved to {output_path}")
@@ -48,14 +61,50 @@ class ManualCropper:
 
     def click_and_crop(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.ref_point = [(x, y)]
-            self.cropping = True
-        elif event == cv2.EVENT_MOUSEMOVE and self.cropping:
-            temp_image = self.clone.copy()  # Use the stored clone
-            cv2.rectangle(temp_image, self.ref_point[0], (x, y), (0, 255, 0), 2)
-            cv2.imshow("Image", temp_image)
+            # If clicking near the resize handle, enable resizing mode
+            if self.current_rect and self.is_near_resize_handle(x, y):
+                self.resizing = True
+                self.resize_point = (x, y)
+            else:
+                self.ref_point = [(x, y)]
+                self.cropping = True
+                self.resizing = False
+
+        elif event == cv2.EVENT_MOUSEMOVE:
+            temp_image = self.clone.copy()
+
+            if self.cropping and len(self.ref_point) == 1:
+                cv2.rectangle(temp_image, self.ref_point[0], (x, y), (0, 255, 0), 2)
+                cv2.imshow("Image", temp_image)
+
+            elif self.resizing:
+                if len(self.ref_point) == 2:
+                    # Adjust the rectangle size dynamically
+                    self.ref_point[1] = (x, y)
+                    cv2.rectangle(temp_image, self.ref_point[0], self.ref_point[1], (0, 255, 0), 2)
+                    self.draw_resize_handles(temp_image)
+                    cv2.imshow("Image", temp_image)
+
         elif event == cv2.EVENT_LBUTTONUP:
-            self.ref_point.append((x, y))
-            self.cropping = False
-            cv2.rectangle(self.clone, self.ref_point[0], self.ref_point[1], (0, 255, 0), 2)
-            cv2.imshow("Image", self.clone)
+            if self.cropping:
+                self.ref_point.append((x, y))
+                self.cropping = False
+                self.current_rect = (self.ref_point[0], self.ref_point[1])
+
+            elif self.resizing:
+                self.resizing = False
+
+    def draw_resize_handles(self, img):
+        """Draw small circles at the rectangle corners to indicate resizing handles."""
+        if len(self.ref_point) == 2:
+            for point in self.ref_point:
+                cv2.circle(img, point, 5, (0, 0, 255), -1)  # Red handles
+
+    def is_near_resize_handle(self, x, y):
+        """Check if the user clicked near a resize handle."""
+        if len(self.ref_point) < 2:
+            return False
+        x1, y1 = self.ref_point[0]
+        x2, y2 = self.ref_point[1]
+
+        return (abs(x - x2) < self.resize_threshold and abs(y - y2) < self.resize_threshold)
