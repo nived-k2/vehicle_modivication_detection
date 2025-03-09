@@ -40,7 +40,7 @@ def main(image_path, brand, model, part):
     anomaly_detector = AnomalyDetector(autoencoder_model_path)
 
     # Use the cropped image for anomaly detection
-    cropped_image_path = "C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection/data/autoencoder/crop/test/cropped_image.jpg"
+    cropped_image_path = "C:/Users/HP/OneDrive/Desktop/vehicle_modivication_detection - Copy/croped/croped_image.jpg"
     if not os.path.exists(cropped_image_path):
         print(f"Error: Cropped image not found at {cropped_image_path}")
         return {"Error": f"Cropped image not found at {cropped_image_path}"}

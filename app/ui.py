@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 from app.manual_cropping import ManualCropper
 from app.main import main
+from modules.result_display import generate_report
 import subprocess
 import os
 
@@ -12,6 +13,7 @@ class VehicleModificationApp:
         self.root.title("Vehicle Modification Detection")
         self.modification_count = 0  # To track the number of modifications detected
         self.penalty_rate = 5000  # Penalty rate per modification
+
 
         # Image Upload
         tk.Label(root, text="Upload Image:").grid(row=0, column=0, padx=10, pady=10)
@@ -68,12 +70,26 @@ class VehicleModificationApp:
         else:
             self.result_text.insert(tk.END, "No image selected.\n")
 
+
+
     def manual_crop(self):
         if not hasattr(self, 'image_path') or not self.image_path:
             self.result_text.insert(tk.END, "Please upload an image first.\n")
             return
+
+        brand = self.brand_var.get()
+        model = self.model_var.get()
+        part = self.part_var.get()
+
+        if not brand or not model or not part:
+            self.result_text.insert(tk.END, "Please select brand, model, and part.\n")
+            return
+
         cropper = ManualCropper(self.image_path)
-        cropper.crop()
+        cropped_image_path = cropper.crop(brand, model, part)  # Save cropped image path
+
+        self.result_text.insert(tk.END, f"Cropped Image Saved: {cropped_image_path}\n")
+        self.cropped_image_path = cropped_image_path
 
     def start_detection(self):
         brand = self.brand_var.get()
