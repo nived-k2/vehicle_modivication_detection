@@ -3,150 +3,149 @@ from tkinter import filedialog, ttk, messagebox
 from app.manual_cropping import ManualCropper
 from app.main import main
 import subprocess
-import os
 
 
 class VehicleModificationApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Vehicle Modification Detection")
-        self.modification_count = 0  # To track the number of modifications detected
-        self.penalty_rate = 5000  # Penalty rate per modification
+        self.modification_count = 0
+        self.penalty_rate = 5000  # Penalty per modification
 
-        # Image Upload
-        tk.Label(root, text="Upload Image:").grid(row=0, column=0, padx=10, pady=10)
-        tk.Button(root, text="Browse Image", command=self.upload_image).grid(row=0, column=1, padx=10, pady=10)
+        # Upload Section
+        upload_frame = tk.LabelFrame(root, text="Upload Image", padx=10, pady=10)
+        upload_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        tk.Button(upload_frame, text="Browse Image", command=self.upload_image).pack()
 
-        # Brand Selection
-        tk.Label(root, text="Select Brand:").grid(row=2, column=0, padx=10, pady=10)
+        # Selection Section
+        selection_frame = tk.LabelFrame(root, text="Vehicle Details", padx=10, pady=10)
+        selection_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
+        tk.Label(selection_frame, text="Select Brand:").grid(row=0, column=0)
         self.brand_var = tk.StringVar()
-        self.brand_dropdown = ttk.Combobox(root, textvariable=self.brand_var, state="readonly")
-        self.brand_dropdown['values'] = ["Bajaj", "tvs", "yamaha"]
-        self.brand_dropdown.grid(row=2, column=1, padx=10, pady=10)
+        self.brand_dropdown = ttk.Combobox(selection_frame, textvariable=self.brand_var, state="readonly")
+        self.brand_dropdown['values'] = ["Bajaj", "tvs", "Yamaha"]
+        self.brand_dropdown.grid(row=0, column=1)
         self.brand_dropdown.bind("<<ComboboxSelected>>", self.update_model_dropdown)
 
-        # Model Selection
-        tk.Label(root, text="Select Model:").grid(row=3, column=0, padx=10, pady=10)
+        tk.Label(selection_frame, text="Select Model:").grid(row=1, column=0)
         self.model_var = tk.StringVar()
-        self.model_dropdown = ttk.Combobox(root, textvariable=self.model_var, state="readonly")
-        self.model_dropdown.grid(row=3, column=1, padx=10, pady=10)
+        self.model_dropdown = ttk.Combobox(selection_frame, textvariable=self.model_var, state="readonly")
+        self.model_dropdown.grid(row=1, column=1)
 
-        # Part Selection
-        tk.Label(root, text="Select Part Type:").grid(row=4, column=0, padx=10, pady=10)
+        tk.Label(selection_frame, text="Select Part Type:").grid(row=2, column=0)
         self.part_var = tk.StringVar()
-        self.part_dropdown = ttk.Combobox(root, textvariable=self.part_var, state="readonly")
+        self.part_dropdown = ttk.Combobox(selection_frame, textvariable=self.part_var, state="readonly")
         self.part_dropdown['values'] = ["Exhaust", "Headlight"]
-        self.part_dropdown.grid(row=4, column=1, padx=10, pady=10)
+        self.part_dropdown.grid(row=2, column=1)
 
-        # Manual Crop
-        tk.Button(root, text="Manual Crop", command=self.manual_crop).grid(row=5, column=0, padx=10, pady=10)
+        # Action Buttons
+        button_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10)
+        button_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        # Start Detection
-        tk.Button(root, text="Start Detection", command=self.start_detection).grid(row=5, column=1, padx=10, pady=10)
-
-        # Test Exhaust Button
-        tk.Button(root, text="Test Exhaust", command=self.test_exhaust).grid(row=6, column=0, padx=10, pady=10)
+        tk.Button(button_frame, text="Manual Crop", command=self.manual_crop).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Start Detection", command=self.start_detection).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Test Exhaust", command=self.run_exhaust_test).grid(row=0, column=2, padx=5, pady=5)
 
         # Results Display
-        self.result_text = tk.Text(root, height=15, width=60)
-        self.result_text.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
-        self.result_text.config(state=tk.DISABLED)
+        self.result_text = tk.Text(root, height=12, width=60)
+        self.result_text.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+
+        # Penalty Display
+        self.penalty_label = tk.Label(root, text="Penalty: ₹0", font=("Arial", 12, "bold"))
+        self.penalty_label.grid(row=4, column=0, columnspan=2, pady=10)
+
+        # Exit Button
+        tk.Button(root, text="Exit", command=self.exit_app, bg="red", fg="white", font=("Arial", 12, "bold")).grid(row=5, column=0, columnspan=2, pady=10)
+
+    def upload_image(self):
+        self.image_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.png *.jpeg")])
+        if self.image_path:
+            self.result_text.insert(tk.END, f"Image Uploaded: {self.image_path}\n")
+        else:
+            self.result_text.insert(tk.END, "No image selected.\n")
 
     def update_model_dropdown(self, event):
         brand = self.brand_var.get()
         models = {
             "Bajaj": ["Dominar", "Pulsar 150", "Pulsar 220"],
-            "tvs": ["Raider", "RR310", "Ronin"],
-            "yamaha": ["Shine", "Unicorn", "CBR"]
+            "tvs": ["raider", "RR310", "Ronin"],
+            "Yamaha": ["R15", "MT-15", "FZ-X"]
         }
         self.model_dropdown['values'] = models.get(brand, [])
         self.model_var.set("")  # Clear previous selection
 
-    def upload_image(self):
-        self.image_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.png *.jpeg")])
-        if self.image_path:
-            self.append_result(f"Image Uploaded: {self.image_path}\n")
-        else:
-            self.append_result("No image selected.\n")
-
     def manual_crop(self):
         if not hasattr(self, 'image_path') or not self.image_path:
-            self.append_result("Please upload an image first.\n")
+            self.result_text.insert(tk.END, "Please upload an image first.\n")
             return
         brand = self.brand_var.get()
         model = self.model_var.get()
         part = self.part_var.get()
-
-        if not brand or not model or not part:
-            self.append_result("Please select brand, model, and part before cropping.\n")
-            return
-
         cropper = ManualCropper(self.image_path, brand, model, part)
         cropper.crop()
 
     def start_detection(self):
-        brand = self.brand_var.get()
-        model = self.model_var.get()
-        part = self.part_var.get()
-
+        brand, model, part = self.brand_var.get(), self.model_var.get(), self.part_var.get()
         if not brand or not model or not part:
-            self.append_result("Please select brand, model, and part.\n")
+            self.result_text.insert(tk.END, "Please select brand, model, and part.\n")
             return
         if not hasattr(self, 'image_path') or not self.image_path:
-            self.append_result("Please upload an image first.\n")
+            self.result_text.insert(tk.END, "Please upload an image first.\n")
             return
 
-        self.append_result(f"Starting detection for {brand} {model} - {part}...\n")
+        self.result_text.insert(tk.END, f"Starting detection for {brand} {model} - {part}...\n")
         try:
             results = main(self.image_path, brand, model, part)
-            for key, value in results.items():
-                self.append_result(f"{key}: {value}\n")
-                if value == "Modified":
-                    self.modification_count += 1  # Increase modification count
 
-            # Ask if the user wants to continue
-            continue_checking = messagebox.askyesno(
-                "Continue Checking?",
-                "Do you want to continue checking other parts?"
-            )
-            if not continue_checking:
+            for key, value in results.items():
+                self.result_text.insert(tk.END, f"{key}: {value}\n")
+                if value == "Modified" or "Modification Detected" in value:  # Fix here
+                    self.modification_count += 1
+
+            self.update_penalty()
+            if not messagebox.askyesno("Continue Checking?", "Do you want to continue checking other parts?"):
                 self.show_final_penalty()
         except Exception as e:
-            self.append_result(f"Error during detection: {str(e)}\n")
+            self.result_text.insert(tk.END, f"Error during detection: {str(e)}\n")
+    def show_final_penalty(self):
+        penalty = self.modification_count * self.penalty_rate
+        self.result_text.insert(tk.END, f"\n--- Final Status ---\nModifications Detected: {self.modification_count}\nTotal Penalty: ₹{penalty}\n")
 
-    def test_exhaust(self):
-        """Run the exhaust testing process."""
-        script_path = os.path.abspath("exhaust_testing.py")  # Adjust to the correct script location
+    def update_penalty(self):
+        penalty = self.modification_count * self.penalty_rate
+        self.penalty_label.config(text=f"Penalty: ₹{penalty}")
 
-        if not os.path.exists(script_path):
-            self.append_result(f"Error: {script_path} not found.\n")
-            return
+    def run_exhaust_test(self):
+        self.result_text.insert(tk.END, "Starting Exhaust Test...\n")
+        self.root.update()
 
         try:
-            # Run the exhaust_testing.py script in a subprocess
-            process = subprocess.Popen(["python", script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.communicate()
+            result = subprocess.run(["python", "exhaust_testing.py"], capture_output=True, text=True)
+            if result.returncode == 0:
+                status = result.stdout.strip().split("\n")[-1].strip()
+                if status == "MODIFIED":
+                    self.result_text.insert(tk.END, f"Exhaust Test Result: {status}\n")
+                    self.modification_count += 1  # Ensure modification count is updated
+                    self.update_penalty()
+                elif status == "NOT MODIFIED":
+                    self.result_text.insert(tk.END, "Exhaust Test Result: NOT MODIFIED\n")
+                else:
+                    self.result_text.insert(tk.END, f"Unexpected output: {status}\n")
+            else:
+                self.result_text.insert(tk.END, f"Error: {result.stderr.strip()}\n")
 
-            # Capture and display the output
-            if stdout:
-                self.append_result(f"Output: {stdout.decode('utf-8')}\n")
-            if stderr:
-                self.append_result(f"Error: {stderr.decode('utf-8')}\n")
+            if not messagebox.askyesno("Continue Checking?", "Do you want to continue checking other parts?"):
+                self.show_final_penalty()
+
         except Exception as e:
-            self.append_result(f"Error running exhaust testing: {str(e)}\n")
+            self.result_text.insert(tk.END, f"Error running exhaust test: {str(e)}\n")
 
-    def append_result(self, text):
-        """Safely update the result text box."""
-        self.result_text.config(state=tk.NORMAL)
-        self.result_text.insert(tk.END, text)
-        self.result_text.config(state=tk.DISABLED)
-
-    def show_final_penalty(self):
-        """Calculate and display the final penalty."""
-        penalty = self.modification_count * self.penalty_rate
-        self.append_result("\n--- Final Status ---\n")
-        self.append_result(f"Modifications Detected: {self.modification_count}\n")
-        self.append_result(f"Total Penalty: ₹{penalty}\n")
+        self.result_text.see(tk.END)
+        self.root.update()
+    def exit_app(self):
+        if messagebox.askyesno("Exit", "Are you sure you want to exit?"):
+            self.root.quit()
 
 
 if __name__ == "__main__":
