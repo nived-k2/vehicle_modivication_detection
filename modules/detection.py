@@ -9,7 +9,7 @@ class ObjectDetection:
         """
         self.model = YOLOModel(model_path)  # Initialize YOLO model
 
-    def detect(self, image_path, conf_threshold=0.7):
+    def detect(self, image_path, conf_threshold=0.2):
         """
         Detect objects in the given image.
         Args:

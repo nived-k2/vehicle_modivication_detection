@@ -1,62 +1,69 @@
-import os
 import cv2
+import torch
+import os
+import numpy as np
 from ultralytics import YOLO
 
-def preprocess_and_crop(input_dir, output_dir, model_path):
+
+def expand_bbox(bbox, img_width, img_height, expansion_factor=0.1):
     """
-    Preprocess and crop images using YOLOv8 for object detection.
+    Expands the bounding box by a given factor while ensuring it remains within image bounds.
+    """
+    x_min, y_min, x_max, y_max = bbox
+    width = x_max - x_min
+    height = y_max - y_min
 
-    Args:
-        input_dir (str): Path to the input dataset containing original images.
-        output_dir (str): Path to save preprocessed cropped images.
-        model_path (str): Path to YOLOv8 weights file.
+    # Expand box
+    x_min = max(0, int(x_min - expansion_factor * width))
+    y_min = max(0, int(y_min - expansion_factor * height))
+    x_max = min(img_width, int(x_max + expansion_factor * width))
+    y_max = min(img_height, int(y_max + expansion_factor * height))
 
-    Returns:
-        None
+    return x_min, y_min, x_max, y_max
+
+
+def detect_and_crop(model_path, image_folder, output_folder, expansion_factor=0.1, conf_threshold=0.3):
+    """
+    Detects objects using YOLOv8, expands bounding boxes, and saves cropped images.
     """
     # Load YOLOv8 model
     model = YOLO(model_path)
 
-    # Create output directory structure
-    cropped_headlight_dir = os.path.join(output_dir, 'cropped_headlight2')
-    os.makedirs(cropped_headlight_dir, exist_ok=True)
+    # Ensure output folder exists
+    os.makedirs(output_folder, exist_ok=True)
 
-    # Process each image in the input directory
-    for filename in os.listdir(input_dir):
-        input_path = os.path.join(input_dir, filename)
-        image = cv2.imread(input_path)
-
-        if image is None:
-            print(f"Failed to load image: {filename}")
+    # Process images
+    for img_name in os.listdir(image_folder):
+        img_path = os.path.join(image_folder, img_name)
+        img = cv2.imread(img_path)
+        if img is None:
             continue
 
-        # Perform YOLOv8 detection
-        results = model(image)
+        img_height, img_width, _ = img.shape
 
-        # Check if any bounding boxes are detected
-        if len(results[0].boxes) == 0:
-            print(f"No bounding boxes detected for: {filename}")
-            continue
+        # Perform detection
+        results = model(img)[0]
 
-        # Iterate through detected bounding boxes
-        for i, box in enumerate(results[0].boxes):
-            # Extract bounding box coordinates
-            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())  # Convert coordinates to integers
+        for i, box in enumerate(results.boxes):
+            if box.conf[0] < conf_threshold:
+                continue  # Skip detections below confidence threshold
 
-            # Crop the image
-            cropped_image = image[y1:y2, x1:x2]
+            x_min, y_min, x_max, y_max = box.xyxy[0].cpu().numpy()
+            x_min, y_min, x_max, y_max = expand_bbox((x_min, y_min, x_max, y_max), img_width, img_height,
+                                                     expansion_factor)
 
-            # Save the cropped image
-            cropped_filename = f"{os.path.splitext(filename)[0]}cropped{i}.jpg"
-            cropped_path = os.path.join(cropped_headlight_dir, cropped_filename)
-            cv2.imwrite(cropped_path, cropped_image)
+            # Crop the detected object
+            cropped_img = img[y_min:y_max, x_min:x_max]
 
-            print(f"Cropped image saved at: {cropped_path}")
+            # Save cropped image
+            save_path = os.path.join(output_folder, f"{os.path.splitext(img_name)[0]}_crop_{i}.jpg")
+            cv2.imwrite(save_path, cropped_img)
+            print(f"Saved cropped image: {save_path}")
 
-# Example usage
+
 if __name__ == "__main__":
-    input_dir = "C:/Users/HP/Downloads/WhatsApp Unknown 2024-12-22 at 11.26.59 PM"
-    output_dir = "C:/Users/HP/OneDrive/Desktop/croped"
-    model_path = "C:/Users/HP/Downloads/best (4).pt"
+    model_path = "C:/Users/HP/OneDrive\Desktop/vehicle_modivication_detection - Copy/models/tvs_raider_headlight_yolo.pt"  # Update with your model path
+    image_folder = "C:/Users/HP/OneDrive/Desktop/tr"  # Update with your input image folder
+    output_folder = "C:/Users/HP/OneDrive/Desktop/tvscrop"  # Update with your desired output folder
 
-    preprocess_and_crop(input_dir, output_dir, model_path)
+    detect_and_crop(model_path, image_folder, output_folder, expansion_factor=0.1)
