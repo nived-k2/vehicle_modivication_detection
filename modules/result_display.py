@@ -4,6 +4,7 @@ from reportlab.lib.utils import ImageReader
 import os
 import shutil
 import time
+from tkinter import filedialog,messagebox
 
 # Store modification history
 MODIFICATION_HISTORY = []
@@ -34,15 +35,20 @@ def append_modification(brand, model, part, status, cropped_image=None):
     })
 
 
+
 def reset_report():
-    """Reset modification history and delete the old report when the system starts."""
+    """Deletes the old report and resets modification history."""
     global MODIFICATION_HISTORY
     MODIFICATION_HISTORY = []  # Clear all previous modifications
 
-    # Delete existing PDF report if it exists
+    # Delete the existing PDF report if it exists
     if os.path.exists(REPORT_PATH):
         os.remove(REPORT_PATH)
-        print(f"Previous report deleted: {REPORT_PATH}")
+        print(f"[INFO] Previous report deleted: {REPORT_PATH}")
+
+    # Start a new report when modifications occur
+    print("[INFO] New report initialized.")
+
 
 def generate_report(final=False):
     """Generate a cumulative PDF report of all modifications."""
@@ -83,3 +89,22 @@ def generate_report(final=False):
 def finalize_report():
     """Call this function before closing the system to finalize the report."""
     generate_report(final=True)
+def download_report():
+    """Allows the user to save a copy of the report before resetting."""
+    if not os.path.exists(REPORT_PATH):
+        messagebox.showerror("Error", "No report available to download.")
+        return
+
+    save_path = filedialog.asksaveasfilename(
+        defaultextension=".pdf",
+        filetypes=[("PDF files", "*.pdf")],
+        title="Save Report As"
+    )
+
+    if save_path:
+        try:
+            import shutil
+            shutil.copy(REPORT_PATH, save_path)
+            messagebox.showinfo("Success", f"Report saved to: {save_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save the report: {str(e)}")
